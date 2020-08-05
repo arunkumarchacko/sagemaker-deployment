@@ -54,11 +54,11 @@ def input_fn(serialized_input_data, content_type):
     raise Exception('Requested unsupported ContentType in content_type: ' + content_type)
 
 def output_fn(prediction_output, accept):
-    print('Serializing the generated output.')
+    print('Serializing the generated output.: ' + str(prediction_output))
     return str(prediction_output)
 
 def predict_fn(input_data, model):
-    print('Inferring sentiment of input data. Data=' + input_data)
+    print('Inferring sentiment of input data. ')
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
@@ -72,15 +72,22 @@ def predict_fn(input_data, model):
     #         data_X   - A sequence of length 500 which represents the converted review
     #         data_len - The length of the review
 
-    print('Word_dict')
-    print(model.word_dict)
+    #print('Word_dict')
+    #print(model.word_dict)
     data_X = None
     data_len = None
     
     preprocessedInputData = review_to_words(input_data)
-    encodedData, theLength = convert_and_pad(model.word_dict, [preprocessedInputData])
+    encodedData, theLength = convert_and_pad(model.word_dict, preprocessedInputData)
+    
+    data_X = encodedData
+    data_len = theLength
 
-    data_X = pd.concat([pd.DataFrame(theLength), pd.DataFrame(encodedData)], axis=1)
+    
+    print(len(encodedData), theLength)
+    print(encodedData[:20])
+
+    #data_X = pd.concat([pd.DataFrame(np.array([theLength])), pd.DataFrame(np.array([encodedData]))], axis=1)
 
 
     # Using data_X and data_len we construct an appropriate input tensor. Remember
@@ -88,23 +95,27 @@ def predict_fn(input_data, model):
     data_pack = np.hstack((data_len, data_X))
     data_pack = data_pack.reshape(1, -1)
     
+    print("Calling torch.from_numpy")
+        
     data = torch.from_numpy(data_pack)
     data = data.to(device)
-
+    
+    print("Calling Model.eval")
     # Make sure to put the model into evaluation mode
     model.eval()
 
-    score = predictor.predict(data)
-    print(score)
+    #print(dir(model))
+    score = model.forward(data)
+    print("Score is:" + str(score))
     
     result = None
     if score[0] > 0.5:
-        result = np.array([1])
+        result = np.array(1)
     else:
-        result = np.array([0])
+        result = np.array(0)
     # TODO: Compute the result of applying the model to the input data. The variable `result` should
     #       be a numpy array which contains a single integer which is either 1 or 0
 
 
-
+    #print("Result is:" + str(result))
     return result
