@@ -28,10 +28,14 @@ def convert_and_pad(word_dict, sentence, pad=500):
     
     working_sentence = [NOWORD] * pad
     
+    #print(type(word_dict))
     for word_index, word in enumerate(sentence[:pad]):
+        #print(word, word_index)
+        #print(type(word))
         if word in word_dict:
             working_sentence[word_index] = word_dict[word]
         else:
             working_sentence[word_index] = INFREQ
             
     return working_sentence, min(len(sentence), pad)
+
